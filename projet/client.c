@@ -10,6 +10,9 @@ Fonctionnalités du client du jeu Morpion
 #include "pse.h"
 #define CMD "client"
 
+#define TOUR_JOUEUR 't'
+#define FIN_PARTIE  'f'
+
 
 int main(int argc, char *argv[]) {
      // initialisation du client
@@ -41,15 +44,48 @@ int main(int argc, char *argv[]) {
     if (ret < 0)
     erreur_IO("connect");
 
+
+
     // boucle principale
-    //
-    while(strcmp(ligne_envoyee, "fin\n") != 0) {
-        printf("> ");
-        fgets(ligne_envoyee, LIGNE_MAX, stdin);
-        lgEcr = ecrireLigne(sock, ligne_envoyee);
-        printf("%d octets ecrits\n", lgEcr);
+    /*
+    Algorithme général:
+        tant que personne ne gagne:
+            on attends notre tour
+            on donne les coordonnees du coup a jouer
+            on teste si les coordonnees sont ok
+            on MaJ la grille et on envoie le coup au serveur
+            on affiche la grille MaJ
+        on affiche le resultat
+        on met en attente pour le match suivant (ou on deconnecte tout simplement)
+    */
+
+    // on affiche le numero de match et l'equipe du joueur
+    lireLigne(sock, ligne_recue);
+    printf("%s\n", ligne_recue);
+
+    // while(strcmp(ligne_recue, "fin\n") != 0) {
+    while(ligne_recue[0] != FIN_PARTIE) {
         lireLigne(sock, ligne_recue);
-        printf("%s\n", ligne_recue);
+
+        
+
+        if (ligne_recue[0] == TOUR_JOUEUR) {
+            // a notre tour de jouer
+            printf("A vous de jouer !\n");
+
+            fgets(ligne_envoyee, LIGNE_MAX, stdin);
+            lgEcr = ecrireLigne(sock, ligne_envoyee);
+            printf("%d octets ecrits\n", lgEcr);
+
+            //Affichage grille
+            printf("Grille...\n\n");
+        }
+
+        
+
+        
+        // lireLigne(sock, ligne_recue);
+        // printf("%s\n", ligne_recue);
 
     }
 

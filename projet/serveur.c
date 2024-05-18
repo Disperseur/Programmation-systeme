@@ -24,12 +24,13 @@ typedef struct Match_t
 {
     int joueur1;
     int joueur2;
+    int tour;
     int gagnant;
     char grille[3][3];
 } Match;
 
 Match matchs[NB_JOUEURS/2] = {
-    {0, 1, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
+    {0, 1, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
     //{2, 3, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
@@ -38,6 +39,8 @@ Match matchs[NB_JOUEURS/2] = {
 int match_courant = 0;
 int joueur_courant = 0;
 int nb_joueurs_connectes = 0;
+int flag_check_grille = FAUX;
+int flag_start_jeu = FAUX;
 
 
 // void init_log(void);
@@ -128,6 +131,11 @@ int main(int argc, char *argv[]) {
                 sem_post(&dataW[i].sem); //on actionne le semaphore
                 
                 nb_joueurs_connectes++;
+                if (joueur_courant < 2) joueur_courant++;
+                else {
+                    joueur_courant = 0;
+                    match_courant++;
+                }
             }        
             else {
                 //gestion de la saturation
@@ -135,7 +143,19 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        printf("Tout les joueurs sont connectes, debut de la partie !\n");
+        flag_start_jeu = VRAI;
+        printf("%d", flag_start_jeu);
+        
+
+        // printf("Tout les joueurs sont connectes, debut de la partie !\n");
+
+        //Gestion des events
+        if (flag_check_grille) {
+            //verification des grilles de jeu
+
+
+            flag_check_grille = 0; //reset du flag
+        }
 
 
     }
@@ -204,36 +224,52 @@ void* worker(void* arg) {
         sem_wait(&donnees_thread->sem);
 
         //gestion du service client
-        // //recuperer les infos de connexion via la structure passee en argument
+        //recuperer les infos de connexion via la structure passee en argument
         int canal = donnees_thread->canal;
+        int match = donnees_thread->match;
+        int joueur= donnees_thread->joueur;
 
         char ligne_recue[LIGNE_MAX];
         char ligne_envoyee[LIGNE_MAX];
         int lgLue;
 
+        sprintf(ligne_envoyee, "match n°%d, joueur n°%d\n", match, joueur);
+        ecrireLigne(canal, ligne_envoyee);
         
 
         // boucle principale de dialogue utilisateur
         while(strcmp(ligne_recue, "fin") != 0) {
-
             
-            lgLue = lireLigne(canal, ligne_recue);
-
-            printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
-
-            ecrireLigne(canal, ligne_envoyee);
-
-            // ecrireLigne(fd_log, ligne_recue);
-
+            if (flag_start_jeu) {
             
-            
+                if (matchs[match].tour == joueur) {
+                    // c'est au tour du client de ce worker de jouer
+                    sprintf(ligne_envoyee, "t\n");
+                    ecrireLigne(canal, ligne_envoyee);
 
-            if(lgLue == 0) {
-                break;
+                    
+                    lgLue = lireLigne(canal, ligne_recue);
+                    printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+
+
+                    //a la fin du tour on switch le tour
+                    matchs[match].tour ^= 1;
+                }
             }
-            if(lgLue == -1) {
-                erreur_IO("lecture du message");
-            }
+
+
+
+         
+
+            
+            
+
+            // if(lgLue == 0) {
+            //     break;
+            // }
+            // if(lgLue == -1) {
+            //     erreur_IO("lecture du message");
+            // }
         }
 
 
@@ -249,12 +285,19 @@ void* worker(void* arg) {
         //mise en veille du worker
         donnees_thread->canal = -1;
         
-        //retrait du joueur
-        nb_joueurs_connectes--;
+        
 
     }
     pthread_exit(NULL); //jamais atteint mais la syntaxe le demande
 }
+
+
+
+
+
+
+
+
 
 
 void start_worker(int canal) {
