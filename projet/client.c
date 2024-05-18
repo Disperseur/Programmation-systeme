@@ -8,8 +8,10 @@ Fonctionnalités du client du jeu Morpion
 
 
 #include "pse.h"
+#include "morpion.h"
 #define CMD "client"
 
+#define DEBUT_MATCH 's'
 #define TOUR_JOUEUR 't'
 #define FIN_PARTIE  'f'
 
@@ -58,27 +60,36 @@ int main(int argc, char *argv[]) {
         on affiche le resultat
         on met en attente pour le match suivant (ou on deconnecte tout simplement)
     */
-
     // on affiche le numero de match et l'equipe du joueur
     lireLigne(sock, ligne_recue);
     printf("%s\n", ligne_recue);
+
+    // initialisation de la grille de jeu
+    initialiserGrille();
+    // affichage de la grille
+    afficherGrille();
+
+    
 
     // while(strcmp(ligne_recue, "fin\n") != 0) {
     while(ligne_recue[0] != FIN_PARTIE) {
         lireLigne(sock, ligne_recue);
 
-        
+        if (ligne_recue[0] == DEBUT_MATCH) {
+            printf("Debut de la partie !\n");
+        }
 
         if (ligne_recue[0] == TOUR_JOUEUR) {
             // a notre tour de jouer
-            printf("A vous de jouer !\n");
+            printf("A vous de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
+            //test du coup demande
 
             fgets(ligne_envoyee, LIGNE_MAX, stdin);
             lgEcr = ecrireLigne(sock, ligne_envoyee);
-            printf("%d octets ecrits\n", lgEcr);
+            // printf("%d octets ecrits\n", lgEcr);
 
             //Affichage grille
-            printf("Grille...\n\n");
+            afficherGrille();
         }
 
         

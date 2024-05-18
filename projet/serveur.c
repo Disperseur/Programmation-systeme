@@ -48,7 +48,8 @@ int nb_joueurs_connectes = 0;
 
 //flags de controle des actions serveur. Ils sont declenches par les workers
 int flag_check_grille = FAUX;
-int flag_start_jeu = FAUX;
+int flag_debut_jeu = FAUX;
+int flag_message_debut_jeu = NB_JOUEURS;
 
 
 void* worker(void* arg);
@@ -125,7 +126,7 @@ int main(int argc, char *argv[]) {
 
             if (i != NB_JOUEURS) {
                 //on affecte la gestion du client au worker i
-                printf("Je suis le worker %d, a votre service.\n", i);
+                printf("Match %d: joueur %d connecte.\n", match_courant, joueur_courant);
                 dataW[i].canal = canal;
                 dataW[i].match = match_courant;
                 dataW[i].joueur = joueur_courant;
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        flag_start_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
+        flag_debut_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
         
 
 
@@ -199,7 +200,13 @@ void* worker(void* arg) {
         // boucle principale de dialogue utilisateur
         while(strcmp(ligne_recue, "fin") != 0) {
             
-            if (flag_start_jeu) {
+            if (flag_debut_jeu) {
+
+                if (flag_message_debut_jeu) {
+                    sprintf(ligne_envoyee, "s\n");
+                    ecrireLigne(canal, ligne_envoyee);
+                    flag_message_debut_jeu--;
+                }
             
                 if (matchs[match].tour == joueur) {
                     // c'est au tour du client de ce worker de jouer
@@ -208,7 +215,7 @@ void* worker(void* arg) {
 
                     
                     lgLue = lireLigne(canal, ligne_recue);
-                    printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+                    // printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
 
 
                     //a la fin du tour on switch le tour
