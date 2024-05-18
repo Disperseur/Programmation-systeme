@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char grille[3][3];
+
 
 void initialiserGrille();
 void afficherGrille();

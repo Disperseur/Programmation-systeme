@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "morpion.h"
 
 char grille[3][3];
 

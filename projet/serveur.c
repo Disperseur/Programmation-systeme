@@ -1,4 +1,6 @@
 #include "pse.h"
+#include "morpion.h"
+
 
 #define CMD "serveur"
 #define NB_WORKERS 5
@@ -28,6 +30,7 @@ int main(int argc, char *argv[]) {
 
     // initialisation des workers
     init_workers();
+    initialiserGrille();
 
     // initialisation du serveur
     short port;
