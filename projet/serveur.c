@@ -12,6 +12,7 @@ Fonctionnalités du serveur de jeu Morpion
 
 #define CMD "serveur"
 #define NB_WORKERS 2
+#define NB_JOUEURS 2
 
 DataSpec dataW[NB_WORKERS];
 
@@ -23,13 +24,18 @@ typedef struct Match_t
     char grille[3][3];
 } Match;
 
-Match matchs[1] = {
+Match matchs[NB_JOUEURS/2] = {
     {0, 1, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
     //{2, 3, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
 
 int fd_log;
+int match_courant = 0;
+int joueur_courant = 0;
+int nb_joueurs_connectes = 0;
+
+
 
 void init_log(void);
 void* worker(void* arg);
@@ -52,7 +58,6 @@ int main(int argc, char *argv[]) {
 
     // initialisation des workers
     init_workers();
-    initialiserGrille();
 
     // initialisation du serveur
     short port;
@@ -85,45 +90,46 @@ int main(int argc, char *argv[]) {
    
 
 
-
-    int match_courant = 0;
-    int joueur_courant = 0;
-
-
     while (1) {
-        
-        // attente de connexion
-        printf("%s: listening to socket\n", CMD);
-        ret = listen (ecoute, 5);
-        if (ret < 0)
-        erreur_IO("listen");
+        // connexion de tout les joueurs avant debut de partie
 
-        printf("%s: accepting a connection\n", CMD);
-        lgAdrClient = sizeof(adrClient);
-        canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient); //fonction qui attends une nouvelle connexion
-        if (canal < 0)
-            erreur_IO("accept");
+        while (nb_joueurs_connectes < NB_JOUEURS) {
+            // attente de connexion
+            printf("%s: listening to socket\n", CMD);
+            ret = listen (ecoute, 5);
+            if (ret < 0)
+            erreur_IO("listen");
 
-        printf("%s: adr %s, port %hu\n", CMD,
-            stringIP(ntohl(adrClient.sin_addr.s_addr)),
-            ntohs(adrClient.sin_port));
+            printf("%s: accepting a connection\n", CMD);
+            lgAdrClient = sizeof(adrClient);
+            canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient); //fonction qui attends une nouvelle connexion
+            if (canal < 0)
+                erreur_IO("accept");
 
-        //affectation d'un worker a la connexion client
-        // start_worker(canal);
-        //recherche d'un thread disponible
-        int i = available_worker();
+            printf("%s: adr %s, port %hu\n", CMD,
+                stringIP(ntohl(adrClient.sin_addr.s_addr)),
+                ntohs(adrClient.sin_port));
 
-        if (i != NB_WORKERS) {
-            //on affecte la gestion du client au worker i
-            printf("Je suis le worker %d, a votre service.\n", i);
-            dataW[i].canal = canal;
-            sem_post(&dataW[i].sem); //on actionne le semaphore
-        }        
-        else {
-            //gestion de la saturation
-            printf("Tout les workers sont occupés !\n");
+            //affectation d'un worker a la connexion client
+            // start_worker(canal);
+            //recherche d'un thread disponible
+            int i = available_worker();
+
+            if (i != NB_WORKERS) {
+                //on affecte la gestion du client au worker i
+                printf("Je suis le worker %d, a votre service.\n", i);
+                dataW[i].canal = canal;
+                sem_post(&dataW[i].sem); //on actionne le semaphore
+                nb_joueurs_connectes++;
+            }        
+            else {
+                //gestion de la saturation
+                printf("Tout les workers sont occupés !\n");
+            }
         }
-        
+
+        printf("Tout les joueurs sont connectes, debut de la partie !\n");
+
 
     }
 
@@ -227,9 +233,10 @@ void* worker(void* arg) {
 
 
         //mise en veille du worker
-        
         donnees_thread->canal = -1;
         
+        //retrait du joueur
+        nb_joueurs_connectes--;
 
     }
     pthread_exit(NULL); //jamais atteint mais la syntaxe le demande
