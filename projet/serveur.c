@@ -8,6 +8,10 @@ Fonctionnalités du serveur de jeu Morpion
 
 
 Astuce: pour communiquer entre les workers: variables globales !
+
+
+
+NB_WORKERS = NB_JOUEURS
 */
 
 #include "pse.h"
@@ -15,13 +19,15 @@ Astuce: pour communiquer entre les workers: variables globales !
 
 
 #define CMD "serveur"
-#define NB_WORKERS 2
 #define NB_JOUEURS 2
 
-DataSpec dataW[NB_WORKERS];
+DataSpec dataW[NB_JOUEURS]; //structure de controle des threads joueurs sur le serveur
 
 typedef struct Match_t
 {
+    /*
+    Structure definissant les elements principaux d'un match. Certains seront peut etre inutiles
+    */
     int joueur1;
     int joueur2;
     int tour;
@@ -29,25 +35,25 @@ typedef struct Match_t
     char grille[3][3];
 } Match;
 
+//tableau a initialiser automatiquement a l'avenir mais qui contient les matchs a jouer
 Match matchs[NB_JOUEURS/2] = {
     {0, 1, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
     //{2, 3, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
 
-// int fd_log;
 int match_courant = 0;
 int joueur_courant = 0;
 int nb_joueurs_connectes = 0;
+
+//flags de controle des actions serveur. Ils sont declenches par les workers
 int flag_check_grille = FAUX;
 int flag_start_jeu = FAUX;
 
 
-// void init_log(void);
 void* worker(void* arg);
 void init_workers(void);
 int available_worker(void);
-void start_worker(int canal);
 
 
 
@@ -89,17 +95,13 @@ int main(int argc, char *argv[]) {
     if (ret < 0)
         erreur_IO("bind");
     
-    
-    //initialisation du log
-    // init_log();
-    
    
 
 
     while (1) {
         // connexion de tout les joueurs avant debut de partie
 
-        while (nb_joueurs_connectes < NB_JOUEURS) {
+        while (nb_joueurs_connectes < 2) {
             // attente de connexion
             printf("%s: listening to socket\n", CMD);
             ret = listen (ecoute, 5);
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
             //recherche d'un thread disponible
             int i = available_worker();
 
-            if (i != NB_WORKERS) {
+            if (i != NB_JOUEURS) {
                 //on affecte la gestion du client au worker i
                 printf("Je suis le worker %d, a votre service.\n", i);
                 dataW[i].canal = canal;
@@ -131,6 +133,8 @@ int main(int argc, char *argv[]) {
                 sem_post(&dataW[i].sem); //on actionne le semaphore
                 
                 nb_joueurs_connectes++;
+
+                //controle de l'affectation aux matchs et joueurs des workers (renommes en joueur)
                 if (joueur_courant < 2) joueur_courant++;
                 else {
                     joueur_courant = 0;
@@ -139,15 +143,13 @@ int main(int argc, char *argv[]) {
             }        
             else {
                 //gestion de la saturation
-                printf("Tout les workers sont occupés !\n");
+                printf("Tout les workers sont occupés !\n"); //a retirer prochainement
             }
         }
 
-        flag_start_jeu = VRAI;
-        printf("%d", flag_start_jeu);
+        flag_start_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
         
 
-        // printf("Tout les joueurs sont connectes, debut de la partie !\n");
 
         //Gestion des events
         if (flag_check_grille) {
@@ -156,8 +158,6 @@ int main(int argc, char *argv[]) {
 
             flag_check_grille = 0; //reset du flag
         }
-
-
     }
 
     // if(close(fd_log) == -1) {
@@ -172,44 +172,6 @@ int main(int argc, char *argv[]) {
 
 
 
-
-
-
-
-
-// void init_log(void) {
-//     // initialisation du log
-//     fd_log = open("journal.log", O_WRONLY|O_APPEND, 0644);
-//     if(fd_log == -1) {
-//         erreur_IO("ouverture journal.log");
-//     }
-//     ecrireLigne(fd_log, "Initialisation du journal log.\n");
-// }
-
-
-
-void init_workers(void) {
-    //initialisation de la cohorte
-    for(int i=0; i<NB_WORKERS; i++) {
-        dataW[i].canal = -1; //-1 pour mettre en sommeil le thread
-        sem_init(&dataW[i].sem, 0, 0); //initialisation du semaphore worker
-        pthread_create(&dataW[i].id, NULL, worker, &dataW[i]); //creation de threads
-
-        
-    }
-}
-
-
-
-int available_worker(void) {
-    int i = 0;
-    while(dataW[i].canal != -1 && i < NB_WORKERS) {i++;}
-
-    return i;
-}
-
-
-
 void* worker(void* arg) {
     /*Fonction thread de session client*/
     DataSpec* donnees_thread = (DataSpec* )arg;
@@ -217,13 +179,9 @@ void* worker(void* arg) {
 
     //boucle infinie principale
     while (1) {
-        //attente d'une assignation de service
-        // while (donnees_thread->canal == -1) {
-        //     usleep(10000); //tempo de 1000 micro secondes
-        // }
+        //attente d'une assignation de joueur
         sem_wait(&donnees_thread->sem);
 
-        //gestion du service client
         //recuperer les infos de connexion via la structure passee en argument
         int canal = donnees_thread->canal;
         int match = donnees_thread->match;
@@ -233,6 +191,7 @@ void* worker(void* arg) {
         char ligne_envoyee[LIGNE_MAX];
         int lgLue;
 
+        //affichage du match et du numero de joueur
         sprintf(ligne_envoyee, "match n°%d, joueur n°%d\n", match, joueur);
         ecrireLigne(canal, ligne_envoyee);
         
@@ -297,21 +256,22 @@ void* worker(void* arg) {
 
 
 
-
-
-
-void start_worker(int canal) {
-    //recherche d'un thread disponible
-    int i = available_worker();
-
-    if (i != NB_WORKERS) {
-        //on affecte la gestion du client au worker i
-        printf("Je suis le worker %d, a votre service.\n", i);
-        dataW[i].canal = canal;
-        sem_post(&dataW[i].sem); //on actionne le semaphore
-    }        
-    else {
-        //gestion de la saturation
-        printf("Tout les workers sont occupés !\n");
+void init_workers(void) {
+    //initialisation de la cohorte
+    for(int i=0; i<NB_JOUEURS; i++) {
+        dataW[i].canal = -1; //-1 pour mettre en sommeil le thread
+        sem_init(&dataW[i].sem, 0, 0); //initialisation du semaphore worker
+        pthread_create(&dataW[i].id, NULL, worker, &dataW[i]); //creation de threads
     }
 }
+
+
+
+int available_worker(void) {
+    int i = 0;
+    while(dataW[i].canal != -1 && i < NB_JOUEURS) {i++;}
+
+    return i;
+}
+
+
