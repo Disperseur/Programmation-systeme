@@ -19,7 +19,7 @@ NB_WORKERS = NB_JOUEURS
 
 
 #define CMD "serveur"
-#define NB_JOUEURS 2
+#define NB_JOUEURS 4
 
 DataSpec dataW[NB_JOUEURS]; //structure de controle des threads joueurs sur le serveur
 
@@ -38,7 +38,7 @@ typedef struct Match_t
 //tableau a initialiser automatiquement a l'avenir mais qui contient les matchs a jouer
 Match matchs[NB_JOUEURS/2] = {
     {0, 1, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
-    //{2, 3, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
+    {2, 3, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     while (1) {
         // connexion de tout les joueurs avant debut de partie
 
-        while (nb_joueurs_connectes < 2) {
+        while (nb_joueurs_connectes < NB_JOUEURS) {
             // attente de connexion
             printf("%s: listening to socket\n", CMD);
             ret = listen (ecoute, 5);
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
                 nb_joueurs_connectes++;
 
                 //controle de l'affectation aux matchs et joueurs des workers (renommes en joueur)
-                if (joueur_courant < 2) joueur_courant++;
+                if (joueur_courant < 1) joueur_courant++;
                 else {
                     joueur_courant = 0;
                     match_courant++;
@@ -202,11 +202,11 @@ void* worker(void* arg) {
             
             if (flag_debut_jeu) {
 
-                if (flag_message_debut_jeu) {
-                    sprintf(ligne_envoyee, "s\n");
-                    ecrireLigne(canal, ligne_envoyee);
-                    flag_message_debut_jeu--;
-                }
+                // if (flag_message_debut_jeu) {
+                //     sprintf(ligne_envoyee, "s\n");
+                //     ecrireLigne(canal, ligne_envoyee);
+                //     flag_message_debut_jeu--;
+                // }
             
                 if (matchs[match].tour == joueur) {
                     // c'est au tour du client de ce worker de jouer
