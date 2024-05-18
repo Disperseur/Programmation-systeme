@@ -6,7 +6,8 @@ int main(int argc, char *argv[]) {
      // initialisation du client
     int sock, ret;
     struct sockaddr_in *adrServ;
-    char ligne[LIGNE_MAX];
+    char ligne_envoyee[LIGNE_MAX];
+    char ligne_recue[LIGNE_MAX];
     int lgEcr;
 
     if (argc != 3)
@@ -33,11 +34,13 @@ int main(int argc, char *argv[]) {
 
     // boucle principale
     //
-    while(strcmp(ligne, "fin\n") != 0) {
+    while(strcmp(ligne_envoyee, "fin\n") != 0) {
         printf("> ");
-        fgets(ligne, LIGNE_MAX, stdin);
-        lgEcr = ecrireLigne(sock, ligne);
+        fgets(ligne_envoyee, LIGNE_MAX, stdin);
+        lgEcr = ecrireLigne(sock, ligne_envoyee);
         printf("%d octets ecrits\n", lgEcr);
+        lireLigne(sock, ligne_recue);
+        printf("%s\n", ligne_recue);
 
     }
 

@@ -158,16 +158,18 @@ void* worker(void* arg) {
         // //recuperer les infos de connexion via la structure passee en argument
         int canal = donnees_thread->canal;
 
-        char ligne[LIGNE_MAX];
+        char ligne_recue[LIGNE_MAX];
+        char ligne_envoyee[] = "Serveur. recu.";
         int lgLue;
 
         // boucle principale de dialogue utilisateur
-        while(strcmp(ligne, "fin") != 0) {
+        while(strcmp(ligne_recue, "fin") != 0) {
 
-            lgLue = lireLigne(canal, ligne);
+            lgLue = lireLigne(canal, ligne_recue);
 
-            printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne);
-            ecrireLigne(fd_log, ligne);
+            printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+            ecrireLigne(canal, ligne_envoyee);
+            ecrireLigne(fd_log, ligne_recue);
             
 
             if(lgLue == 0) {
