@@ -68,6 +68,7 @@ int available_worker(void);
 
 
 int main(int argc, char *argv[]) {
+    printf("[Serveur de tournoi de morpion]\n\n");
 
     // initialisation des workers
     init_workers();

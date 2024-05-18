@@ -27,21 +27,21 @@ int main(int argc, char *argv[]) {
     if (argc != 3)
         erreur("usage: %s machine port\n", argv[0]);
 
-    printf("%s: creating a socket\n", CMD);
+    // printf("%s: creating a socket\n", CMD);
     sock = socket (AF_INET, SOCK_STREAM, 0);
     if (sock < 0)
         erreur_IO("socket");
 
-    printf("%s: DNS resolving for %s, port %s\n", CMD, argv[1], argv[2]);
+    // printf("%s: DNS resolving for %s, port %s\n", CMD, argv[1], argv[2]);
     adrServ = resolv(argv[1], argv[2]);
     if (adrServ == NULL)
         erreur("adresse %s port %s inconnus\n", argv[1], argv[2]);
 
-    printf("%s: adr %s, port %hu\n", CMD,
-            stringIP(ntohl(adrServ->sin_addr.s_addr)),
-            ntohs(adrServ->sin_port));
+    // printf("%s: adr %s, port %hu\n", CMD,
+    //         stringIP(ntohl(adrServ->sin_addr.s_addr)),
+    //         ntohs(adrServ->sin_port));
 
-    printf("%s: connecting the socket\n", CMD);
+    // printf("%s: connecting the socket\n", CMD);
     ret = connect(sock, (struct sockaddr *)adrServ, sizeof(struct sockaddr_in));
     if (ret < 0)
     erreur_IO("connect");
@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
         on affiche le resultat
         on met en attente pour le match suivant (ou on deconnecte tout simplement)
     */
+
+    system("clear");
     // on affiche le numero de match et l'equipe du joueur
     lireLigne(sock, ligne_recue);
     printf("%s\n", ligne_recue);
@@ -89,6 +91,7 @@ int main(int argc, char *argv[]) {
             // printf("%d octets ecrits\n", lgEcr);
 
             //Affichage grille
+            system("clear");
             afficherGrille();
         }
 
