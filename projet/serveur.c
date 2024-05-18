@@ -1,3 +1,11 @@
+/*
+Fonctionnalités du serveur de jeu Morpion
+(- Gérer les parties simultanées)
+- Ordonner les tours de chaque joueur
+- tester la grille et donner la victoire/defaite/match nul
+- acquerir les coup des joueurs (le test de legalite peut etre fait par le client)
+*/
+
 #include "pse.h"
 #include "morpion.h"
 
@@ -6,6 +14,20 @@
 #define NB_WORKERS 2
 
 DataSpec dataW[NB_WORKERS];
+
+typedef struct Match_t
+{
+    int joueur1;
+    int joueur2;
+    int gagnant;
+    char grille[3][3];
+} Match;
+
+Match matchs[1] = {
+    {0, 1, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
+    //{2, 3, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
+};
+
 
 int fd_log;
 
@@ -64,7 +86,8 @@ int main(int argc, char *argv[]) {
 
 
 
-
+    int match_courant = 0;
+    int joueur_courant = 0;
 
 
     while (1) {
@@ -86,7 +109,20 @@ int main(int argc, char *argv[]) {
             ntohs(adrClient.sin_port));
 
         //affectation d'un worker a la connexion client
-        start_worker(canal);
+        // start_worker(canal);
+        //recherche d'un thread disponible
+        int i = available_worker();
+
+        if (i != NB_WORKERS) {
+            //on affecte la gestion du client au worker i
+            printf("Je suis le worker %d, a votre service.\n", i);
+            dataW[i].canal = canal;
+            sem_post(&dataW[i].sem); //on actionne le semaphore
+        }        
+        else {
+            //gestion de la saturation
+            printf("Tout les workers sont occupés !\n");
+        }
         
 
     }
