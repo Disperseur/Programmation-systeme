@@ -4,6 +4,10 @@ Fonctionnalités du serveur de jeu Morpion
 - Ordonner les tours de chaque joueur
 - tester la grille et donner la victoire/defaite/match nul
 - acquerir les coup des joueurs (le test de legalite peut etre fait par le client)
+
+
+
+Astuce: pour communiquer entre les workers: variables globales !
 */
 
 #include "pse.h"
@@ -30,14 +34,13 @@ Match matchs[NB_JOUEURS/2] = {
 };
 
 
-int fd_log;
+// int fd_log;
 int match_courant = 0;
 int joueur_courant = 0;
 int nb_joueurs_connectes = 0;
 
 
-
-void init_log(void);
+// void init_log(void);
 void* worker(void* arg);
 void init_workers(void);
 int available_worker(void);
@@ -85,7 +88,7 @@ int main(int argc, char *argv[]) {
     
     
     //initialisation du log
-    init_log();
+    // init_log();
     
    
 
@@ -119,7 +122,11 @@ int main(int argc, char *argv[]) {
                 //on affecte la gestion du client au worker i
                 printf("Je suis le worker %d, a votre service.\n", i);
                 dataW[i].canal = canal;
+                dataW[i].match = match_courant;
+                dataW[i].joueur = joueur_courant;
+
                 sem_post(&dataW[i].sem); //on actionne le semaphore
+                
                 nb_joueurs_connectes++;
             }        
             else {
@@ -133,9 +140,9 @@ int main(int argc, char *argv[]) {
 
     }
 
-    if(close(fd_log) == -1) {
-        erreur_IO("fermeture journal.log");
-    }
+    // if(close(fd_log) == -1) {
+    //     erreur_IO("fermeture journal.log");
+    // }
 
 
     return(0);
@@ -150,14 +157,14 @@ int main(int argc, char *argv[]) {
 
 
 
-void init_log(void) {
-    // initialisation du log
-    fd_log = open("journal.log", O_WRONLY|O_APPEND, 0644);
-    if(fd_log == -1) {
-        erreur_IO("ouverture journal.log");
-    }
-    ecrireLigne(fd_log, "Initialisation du journal log.\n");
-}
+// void init_log(void) {
+//     // initialisation du log
+//     fd_log = open("journal.log", O_WRONLY|O_APPEND, 0644);
+//     if(fd_log == -1) {
+//         erreur_IO("ouverture journal.log");
+//     }
+//     ecrireLigne(fd_log, "Initialisation du journal log.\n");
+// }
 
 
 
@@ -201,17 +208,24 @@ void* worker(void* arg) {
         int canal = donnees_thread->canal;
 
         char ligne_recue[LIGNE_MAX];
-        char ligne_envoyee[] = "Serveur. recu.";
+        char ligne_envoyee[LIGNE_MAX];
         int lgLue;
+
+        
 
         // boucle principale de dialogue utilisateur
         while(strcmp(ligne_recue, "fin") != 0) {
 
+            
             lgLue = lireLigne(canal, ligne_recue);
 
             printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+
             ecrireLigne(canal, ligne_envoyee);
-            ecrireLigne(fd_log, ligne_recue);
+
+            // ecrireLigne(fd_log, ligne_recue);
+
+            
             
 
             if(lgLue == 0) {
