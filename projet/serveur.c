@@ -3,7 +3,7 @@
 
 
 #define CMD "serveur"
-#define NB_WORKERS 5
+#define NB_WORKERS 2
 
 DataSpec dataW[NB_WORKERS];
 
