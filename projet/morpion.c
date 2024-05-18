@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 char grille[3][3];
 
@@ -45,12 +46,16 @@ int verifierGagnant() {
     return -1; // match nul...
 }
 
-int main() {
+int partie_morpion() {
     int ligne, colonne, joueur = 1;
     int tour = 0;
     char marque;
 
     initialiserGrille();
+    system("clear");
+    printf("***Tournoi de morpion***\n\n");
+    afficherGrille();
+    printf("\n");
 
     while(tour<9) {
         joueur = (joueur % 2) ? 1 : 2;
@@ -66,12 +71,19 @@ int main() {
         } else {
             grille[ligne][colonne] = marque;
             tour++;
+
+            system("clear");
+            printf("***Tournoi de morpion***\n\n");
             afficherGrille();
+            printf("\n");
+
             if (verifierGagnant() == 1) {
                 printf("Victoire du joueur %d !!!!\n", joueur);
+                return(joueur);
                 break;
             } else if (verifierGagnant() == -1) {
                 printf("Match nul...\n");
+                return(-1);
                 break;
             }
         }

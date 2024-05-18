@@ -2,7 +2,7 @@
 #
 include ../Makefile.inc
 
-EXE = serveur client
+EXE = serveur client morpion
 
 all: ${EXE}
 
