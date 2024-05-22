@@ -15,13 +15,20 @@ NB_WORKERS = NB_JOUEURS
 */
 
 #include "pse.h"
-#include "morpion.h"
+// #include "morpion.h"
 
 
 #define CMD "serveur"
 #define NB_JOUEURS 4
 
 DataSpec dataW[NB_JOUEURS]; //structure de controle des threads joueurs sur le serveur
+
+typedef struct
+{
+    int x;
+    int y;
+}Coup;
+
 
 typedef struct Match_t
 {
@@ -32,13 +39,15 @@ typedef struct Match_t
     int joueur2;
     int tour;
     int gagnant;
+    Coup dernier_coup_joue;
+
     char grille[3][3];
 } Match;
 
 //tableau a initialiser automatiquement a l'avenir mais qui contient les matchs a jouer
 Match matchs[NB_JOUEURS/2] = {
-    {0, 1, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
-    {2, 3, 0, -1, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
+    {0, 1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
+    {2, 3, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
 
@@ -193,8 +202,12 @@ void* worker(void* arg) {
         char ligne_envoyee[LIGNE_MAX];
         int lgLue;
 
+        int x_joue, y_joue;
+
+        
+
         //affichage du match et du numero de joueur
-        sprintf(ligne_envoyee, "match n°%d, joueur n°%d\n", match, joueur);
+        sprintf(ligne_envoyee, "%d %d", match, joueur);
         ecrireLigne(canal, ligne_envoyee);
         
 
@@ -210,13 +223,18 @@ void* worker(void* arg) {
                 // }
             
                 if (matchs[match].tour == joueur) {
-                    // c'est au tour du client de ce worker de jouer
-                    sprintf(ligne_envoyee, "t\n");
+                    // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
+                    //on dit quel est le dernier coup joue sur la partie
+                    sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
                     ecrireLigne(canal, ligne_envoyee);
 
-                    
+                    // on attends le coup valide joue par le joueur
                     lgLue = lireLigne(canal, ligne_recue);
-                    // printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+                    printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+                    sscanf(ligne_recue, "%d %d", &x_joue, &y_joue); //on recupere le coup joue pour l'envoyer au joueur 2
+                    //on sauvegarde le coup joue pour le donner au client du joueur adverse pour update sa grille
+                    matchs[match].dernier_coup_joue.x = x_joue;
+                    matchs[match].dernier_coup_joue.y = y_joue;
 
 
                     //a la fin du tour on switch le tour

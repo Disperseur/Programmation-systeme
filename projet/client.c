@@ -8,12 +8,35 @@ Fonctionnalités du client du jeu Morpion
 
 
 #include "pse.h"
-#include "morpion.h"
+//#include "morpion.h"
 #define CMD "client"
+
 
 #define DEBUT_MATCH 's'
 #define TOUR_JOUEUR 't'
 #define FIN_PARTIE  'f'
+
+
+
+void initialiserGrille(char grille[3][3]) {
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            grille[i][j] = '-';
+        }
+    }
+}
+
+void afficherGrille(char grille[3][3]) {
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            printf("%c ", grille[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+
+
 
 
 int main(int argc, char *argv[]) {
@@ -23,6 +46,19 @@ int main(int argc, char *argv[]) {
     char ligne_envoyee[LIGNE_MAX];
     char ligne_recue[LIGNE_MAX];
     int lgEcr;
+
+    char grille_morpion[3][3];
+
+    int match, joueur;
+
+    int x = -1;
+    int y = -1;
+    int x_dernier_coup_adversaire;
+    int y_dernier_coup_adversaire;
+
+
+
+
 
     if (argc != 3)
         erreur("usage: %s machine port\n", argv[0]);
@@ -62,14 +98,19 @@ int main(int argc, char *argv[]) {
     */
 
     system("clear");
+
     // on affiche le numero de match et l'equipe du joueur
-    lireLigne(sock, ligne_recue);
-    printf("%s\n", ligne_recue);
+    lireLigne(sock, ligne_recue); //recuperation du numero du match joue et du joueur incarne
+    sscanf(ligne_recue, "%d %d", &match, &joueur); //on recupere les numeros depuis la chaine recue
+
+
+    // printf("%s\n", ligne_recue);
+    printf("Match joue: %d, vous etes le joueur n°%d\n", match, joueur);
 
     // initialisation de la grille de jeu
-    initialiserGrille();
+    initialiserGrille(grille_morpion);
     // affichage de la grille
-    afficherGrille();
+    // afficherGrille(grille_morpion);
 
     
 
@@ -83,16 +124,37 @@ int main(int argc, char *argv[]) {
 
         if (ligne_recue[0] == TOUR_JOUEUR) {
             // a notre tour de jouer
-            printf("A vous de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
+            //on recupere le dernier coup joue
+            char buffer;
+            sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
+            //on update la grille avec le dernier coup de l'adversaire
+            grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
+            //on affiche la grille avec le dernier coup adversaire
+            system("clear");
+            afficherGrille(grille_morpion);
+
             //test du coup demande
 
-            fgets(ligne_envoyee, LIGNE_MAX, stdin);
+            // fgets(ligne_envoyee, LIGNE_MAX, stdin);
+            
+            x = -1;
+            y = -1;
+            while ( ((x < 0) || (x > 2) || (y < 0) || (y > 2)) || grille_morpion[y][x] != '-') {
+                printf("A vous de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
+                scanf("%d %d", &x, &y);
+            }
+
+            // on communique le coup joue
+            sprintf(ligne_envoyee, "%d %d", x, y);
             lgEcr = ecrireLigne(sock, ligne_envoyee);
             // printf("%d octets ecrits\n", lgEcr);
 
+            // on place le coup sur la grille
+            grille_morpion[y][x] = joueur? 'o' : 'x';
+
             //Affichage grille
             system("clear");
-            afficherGrille();
+            afficherGrille(grille_morpion);
         }
 
         

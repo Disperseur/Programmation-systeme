@@ -17,7 +17,6 @@ Chaque worker s'occupe d'un client. Il s'assure que le coup demandé est possibl
 * attente de la connexion de tout les joueurs avant le démarrage des matchs
 
 
-## Trus à ajouter (?)
+## Trucs à ajouter (?)
 
-- flag global de démarrage des matchs
 - gestion d'un match  

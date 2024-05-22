@@ -6,10 +6,10 @@
 
 
 
-void initialiserGrille();
-void afficherGrille();
-int verifierGagnant();
-int partie_morpion();
+void initialiserGrille(char grille[3][3]);
+void afficherGrille(char grille[3][3]);
+int verifierGagnant(char grille[3][3]);
+// int partie_morpion();
 
 
 #endif

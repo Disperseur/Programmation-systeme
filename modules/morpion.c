@@ -1,8 +1,7 @@
 #include "morpion.h"
 
-char grille[3][3];
 
-void initialiserGrille() {
+void initialiserGrille(char grille[3][3]) {
     for(int i = 0; i < 3; i++) {
         for(int j = 0; j < 3; j++) {
             grille[i][j] = '-';
@@ -10,7 +9,7 @@ void initialiserGrille() {
     }
 }
 
-void afficherGrille() {
+void afficherGrille(char grille[3][3]) {
     for(int i = 0; i < 3; i++) {
         for(int j = 0; j < 3; j++) {
             printf("%c ", grille[i][j]);
@@ -19,7 +18,7 @@ void afficherGrille() {
     }
 }
 
-int verifierGagnant() {
+int verifierGagnant(char grille[3][3]) {
     // Vérification des lignes et des colonnes
     for(int i = 0; i < 3; i++) {
         if (grille[i][0] == grille[i][1] && grille[i][1] == grille[i][2] && grille[i][0] != '-') {
@@ -45,49 +44,49 @@ int verifierGagnant() {
     return -1; // match nul...
 }
 
-int partie_morpion() {
-    int ligne, colonne, joueur = 1;
-    int tour = 0;
-    char marque;
+// int partie_morpion() {
+//     int ligne, colonne, joueur = 1;
+//     int tour = 0;
+//     char marque;
 
-    initialiserGrille();
-    system("clear");
-    printf("***Tournoi de morpion***\n\n");
-    afficherGrille();
-    printf("\n");
+//     initialiserGrille();
+//     system("clear");
+//     printf("***Tournoi de morpion***\n\n");
+//     afficherGrille();
+//     printf("\n");
 
-    while(tour<9) {
-        joueur = (joueur % 2) ? 1 : 2;
+//     while(tour<9) {
+//         joueur = (joueur % 2) ? 1 : 2;
 
-        printf("Joueur %d, entre la ligne et la colonne : ", joueur);
-        scanf("%d %d", &ligne, &colonne);
+//         printf("Joueur %d, entre la ligne et la colonne : ", joueur);
+//         scanf("%d %d", &ligne, &colonne);
 
-        marque = (joueur == 1) ? 'X' : 'O';
+//         marque = (joueur == 1) ? 'X' : 'O';
 
-        if (ligne < 0 || ligne > 2 || colonne < 0 || colonne > 2 || grille[ligne][colonne] != '-') {
-            printf("Coup invalide, recommence\n");
-            joueur--;
-        } else {
-            grille[ligne][colonne] = marque;
-            tour++;
+//         if (ligne < 0 || ligne > 2 || colonne < 0 || colonne > 2 || grille[ligne][colonne] != '-') {
+//             printf("Coup invalide, recommence\n");
+//             joueur--;
+//         } else {
+//             grille[ligne][colonne] = marque;
+//             tour++;
 
-            system("clear");
-            printf("***Tournoi de morpion***\n\n");
-            afficherGrille();
-            printf("\n");
+//             system("clear");
+//             printf("***Tournoi de morpion***\n\n");
+//             afficherGrille();
+//             printf("\n");
 
-            if (verifierGagnant() == 1) {
-                printf("Victoire du joueur %d !!!!\n", joueur);
-                return(joueur);
-                break;
-            } else if (verifierGagnant() == -1) {
-                printf("Match nul...\n");
-                return(-1);
-                break;
-            }
-        }
-        joueur++;
-    }
+//             if (verifierGagnant() == 1) {
+//                 printf("Victoire du joueur %d !!!!\n", joueur);
+//                 return(joueur);
+//                 break;
+//             } else if (verifierGagnant() == -1) {
+//                 printf("Match nul...\n");
+//                 return(-1);
+//                 break;
+//             }
+//         }
+//         joueur++;
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
