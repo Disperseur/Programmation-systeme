@@ -35,7 +35,31 @@ void afficherGrille(char grille[3][3]) {
     }
 }
 
-
+int verifierGagnant(char grille[3][3]) {
+    // Vérification des lignes et des colonnes
+    for(int i = 0; i < 3; i++) {
+        if (grille[i][0] == grille[i][1] && grille[i][1] == grille[i][2] && grille[i][0] != '-') {
+            return 1; // victoire
+        }
+        if (grille[0][i] == grille[1][i] && grille[1][i] == grille[2][i] && grille[0][i] != '-') {
+            return 1; // victoire
+        }
+    }
+    // diagonales
+    if ((grille[0][0] == grille[1][1] && grille[1][1] == grille[2][2] && grille[0][0] != '-') ||
+        (grille[0][2] == grille[1][1] && grille[1][1] == grille[2][0] && grille[0][2] != '-')) {
+        return 1; // victoire
+    }
+    // grille pleine ?
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            if (grille[i][j] == '-') {
+                return 0; // le jeu se poursuit
+            }
+        }
+    }
+    return -1; // match nul...
+}
 
 
 
@@ -49,13 +73,12 @@ int main(int argc, char *argv[]) {
 
     char grille_morpion[3][3];
 
-    int match, joueur;
+    int match, joueur, gagnant;
 
     int x = -1;
     int y = -1;
     int x_dernier_coup_adversaire;
     int y_dernier_coup_adversaire;
-
 
 
 
@@ -123,6 +146,8 @@ int main(int argc, char *argv[]) {
         }
 
         if (ligne_recue[0] == TOUR_JOUEUR) {
+        
+             
             // a notre tour de jouer
             //on recupere le dernier coup joue
             char buffer;
@@ -140,7 +165,7 @@ int main(int argc, char *argv[]) {
             x = -1;
             y = -1;
             while ( ((x < 0) || (x > 2) || (y < 0) || (y > 2)) || grille_morpion[y][x] != '-') {
-                printf("A vous de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
+                printf("C'est à votre tour de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
                 scanf("%d %d", &x, &y);
             }
 
@@ -151,10 +176,24 @@ int main(int argc, char *argv[]) {
 
             // on place le coup sur la grille
             grille_morpion[y][x] = joueur? 'o' : 'x';
+            
+            if (verifierGagnant(grille_morpion) == 1) {
+            		 system("clear");
+		         lireLigne(sock, ligne_recue);
+            		 sscanf(ligne_recue, "Victoire du joueur %d !!!!\n", &gagnant);
+            		 printf("Victoire du joueur %d !!!!\n", gagnant);
+		         break;
+		     } else if (verifierGagnant(grille_morpion) == -1) {
+		     	 system("clear");
+		         printf("Match nul...\n");
+		         break;
+		     }
+            
 
             //Affichage grille
             system("clear");
             afficherGrille(grille_morpion);
+            
         }
 
         

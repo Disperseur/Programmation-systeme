@@ -68,7 +68,39 @@ int available_worker(void);
 
 
 
+void initialiserGrille(char grille[3][3]) {
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            grille[i][j] = '-';
+        }
+    }
+}
 
+int verifierGagnant(char grille[3][3]) {
+    // Vérification des lignes et des colonnes
+    for(int i = 0; i < 3; i++) {
+        if (grille[i][0] == grille[i][1] && grille[i][1] == grille[i][2] && grille[i][0] != '-') {
+            return 1; // victoire
+        }
+        if (grille[0][i] == grille[1][i] && grille[1][i] == grille[2][i] && grille[0][i] != '-') {
+            return 1; // victoire
+        }
+    }
+    // diagonales
+    if ((grille[0][0] == grille[1][1] && grille[1][1] == grille[2][2] && grille[0][0] != '-') ||
+        (grille[0][2] == grille[1][1] && grille[1][1] == grille[2][0] && grille[0][2] != '-')) {
+        return 1; // victoire
+    }
+    // grille pleine ?
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            if (grille[i][j] == '-') {
+                return 0; // le jeu se poursuit
+            }
+        }
+    }
+    return -1; // match nul...
+}
 
 
 
@@ -203,7 +235,9 @@ void* worker(void* arg) {
         int lgLue;
 
         int x_joue, y_joue;
-
+	char grille[3][3];
+	initialiserGrille(grille);
+	
         
 
         //affichage du match et du numero de joueur
@@ -221,6 +255,8 @@ void* worker(void* arg) {
                 //     ecrireLigne(canal, ligne_envoyee);
                 //     flag_message_debut_jeu--;
                 // }
+                
+                
             
                 if (matchs[match].tour == joueur) {
                     // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
@@ -235,6 +271,21 @@ void* worker(void* arg) {
                     //on sauvegarde le coup joue pour le donner au client du joueur adverse pour update sa grille
                     matchs[match].dernier_coup_joue.x = x_joue;
                     matchs[match].dernier_coup_joue.y = y_joue;
+                    
+                    //on actualise la grille local du serveur
+                    grille[y_joue][x_joue] = (joueur%2 == 0)? 'X' : 'O';
+                    
+                    //on vérifie la victoire ou le match nul
+                    if (verifierGagnant(grille) == 1) {
+		         sprintf(ligne_envoyee, "Victoire du joueur %d !!!!\n", joueur);
+		         ecrireLigne(canal, ligne_envoyee);
+		         break;
+		         
+		     } else if (verifierGagnant(grille) == -1) {
+		         printf("Match nul...\n");
+		         break;
+		         	         
+		     }
 
 
                     //a la fin du tour on switch le tour
@@ -299,5 +350,3 @@ int available_worker(void) {
 
     return i;
 }
-
-

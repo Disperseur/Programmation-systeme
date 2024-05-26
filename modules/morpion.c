@@ -1,6 +1,6 @@
 #include "morpion.h"
 
-
+/*
 void initialiserGrille(char grille[3][3]) {
     for(int i = 0; i < 3; i++) {
         for(int j = 0; j < 3; j++) {
@@ -42,7 +42,7 @@ int verifierGagnant(char grille[3][3]) {
         }
     }
     return -1; // match nul...
-}
+}*/
 
 // int partie_morpion() {
 //     int ligne, colonne, joueur = 1;
