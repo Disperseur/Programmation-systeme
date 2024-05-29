@@ -12,13 +12,13 @@ Fonctionnalités du client du jeu Morpion
 #define CMD "client"
 
 
-#define DEBUT_MATCH 's'
+// #define DEBUT_MATCH 's'
 #define TOUR_JOUEUR 't'
 #define VICTOIRE    'v'
 #define DEFAITE     'd'
 #define MATCH_NUL   'n'
 
-#define FIN_PARTIE  'f' //utile ?
+// #define FIN_PARTIE  'f' //utile ?
 
 
 

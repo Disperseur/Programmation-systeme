@@ -167,6 +167,8 @@ int main(int argc, char *argv[]) {
             matchs[i].match_en_cours = 1;
         }
 
+        printf("Début des matchs !\n\n");
+
 
         // attente de la fin des matchs (tout les canaux à -1)
         int a = 0;
