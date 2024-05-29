@@ -56,6 +56,7 @@ int match_courant = 0;
 int joueur_courant = 0;
 int nb_joueurs_connectes = 0;
 
+char buffer;
 //flags de controle des actions serveur. Ils sont declenches par les workers
 int flag_check_grille = FAUX;
 int flag_debut_jeu = FAUX;
@@ -214,7 +215,7 @@ void* worker(void* arg) {
         
 
         //affichage du match et du numero de joueur
-        sprintf(ligne_envoyee, "%d %d", match_courant, joueur);
+        sprintf(ligne_envoyee, "i %d %d", match_courant, joueur);
         ecrireLigne(canal, ligne_envoyee);
         
         while(!matchs[match_courant].match_en_cours) {usleep(100);} //attente de debut de partie
@@ -222,90 +223,81 @@ void* worker(void* arg) {
         // boucle principale de dialogue utilisateur
         while(flag_local_match_en_cours) {
             
-            // if () {
+            if (matchs[match_courant].tour == joueur) {
+                // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
+                // on dit quel est le dernier coup joue sur la partie
+                // sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
+                // ecrireLigne(canal, ligne_envoyee);
 
-                // if (flag_message_debut_jeu) {
-                //     sprintf(ligne_envoyee, "s\n");
-                //     ecrireLigne(canal, ligne_envoyee);
-                //     flag_message_debut_jeu--;
-                // }
-            
-                if (matchs[match_courant].tour == joueur) {
-                    // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
-                    //on dit quel est le dernier coup joue sur la partie
-                    // sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
-                    // ecrireLigne(canal, ligne_envoyee);
-
-                    // on teste si il y a victoire d'un joueur
-                    if (matchs[match_courant].gagnant == joueur) {
-                        // victoire du joueur
-                        sprintf(ligne_envoyee, "v\n");
-                        ecrireLigne(canal, ligne_envoyee);
-                        flag_local_match_en_cours = FAUX; //arret du match
-                    }
-                    if (matchs[match_courant].gagnant == !joueur) {
-                        // victoire de l'adversaire
-                        sprintf(ligne_envoyee, "d\n");
-                        ecrireLigne(canal, ligne_envoyee);
-                        flag_local_match_en_cours = FAUX; //arret du match
-                    }
-                    if (matchs[match_courant].gagnant == 2) {
-                        // match nul
-                        sprintf(ligne_envoyee, "n\n");
-                        ecrireLigne(canal, ligne_envoyee);
-                        flag_local_match_en_cours = FAUX; //arret du match
-                    }
-                    if (matchs[match_courant].gagnant == -1) {
-                        // pas de victoire, on joue
-                        sprintf(ligne_envoyee, "t %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
-                        ecrireLigne(canal, ligne_envoyee);
-                    }
-            
-                        
-                        
-                    
-
-                    // on attends le coup valide joue par le joueur
-                    lgLue = lireLigne(canal, ligne_recue);
-                    printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
-                    sscanf(ligne_recue, "%d %d", &x_joue, &y_joue); //on recupere le coup joue pour l'envoyer au joueur 2
-                    
-                    //on sauvegarde le coup joue pour le donner au client du joueur adverse pour update sa grille
-                    matchs[match_courant].dernier_coup_joue.x = x_joue;
-                    matchs[match_courant].dernier_coup_joue.y = y_joue;
-                    matchs[match_courant].grille[y_joue][x_joue] = joueur? 'o' : 'x';
-
-                    // on teste si il y a victoire
-                    switch (verifierGagnant(matchs[match_courant].grille))
-                    {
-                    case 10:
-                        // victoire joueur 1
-                        matchs[match_courant].gagnant = 0;
-                        break;
-                    
-                    case 11:
-                        // victoire joueur 2
-                        matchs[match_courant].gagnant = 1;
-                        break;
-
-                    case -1:
-                        // match nul
-                        matchs[match_courant].gagnant = 2;
-                        break;
-
-                    case 0:
-                        // pas de victoire
-                        break;
-                    
-                    default:
-                        break;
-                    }
-
-
-                    //a la fin du tour on switch le tour
-                    matchs[match_courant].tour ^= 1;
+                // on teste si il y a eu victoire d'un joueur
+                if (matchs[match_courant].gagnant == joueur) {
+                    // victoire du joueur
+                    sprintf(ligne_envoyee, "v %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
+                    ecrireLigne(canal, ligne_envoyee);
+                    flag_local_match_en_cours = FAUX; //arret du match
                 }
-            // }
+                if (matchs[match_courant].gagnant == !joueur) {
+                    // victoire de l'adversaire
+                    sprintf(ligne_envoyee, "d %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
+                    ecrireLigne(canal, ligne_envoyee);
+                    flag_local_match_en_cours = FAUX; //arret du match
+                }
+                if (matchs[match_courant].gagnant == 2) {
+                    // match nul
+                    sprintf(ligne_envoyee, "n %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
+                    ecrireLigne(canal, ligne_envoyee);
+                    flag_local_match_en_cours = FAUX; //arret du match
+                }
+                if (matchs[match_courant].gagnant == -1) {
+                    // pas de victoire, on joue
+                    sprintf(ligne_envoyee, "t %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
+                    ecrireLigne(canal, ligne_envoyee);
+                }
+        
+                    
+                    
+                
+
+                // on attends le coup valide joue par le joueur
+                lgLue = lireLigne(canal, ligne_recue);
+                printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
+                sscanf(ligne_recue, "%c %d %d", &buffer, &x_joue, &y_joue); //on recupere le coup joue pour l'envoyer au joueur 2
+                
+                //on sauvegarde le coup joue pour le donner au client du joueur adverse pour update sa grille
+                matchs[match_courant].dernier_coup_joue.x = x_joue;
+                matchs[match_courant].dernier_coup_joue.y = y_joue;
+                matchs[match_courant].grille[y_joue][x_joue] = joueur? 'o' : 'x';
+
+                // on teste si il y a victoire
+                switch (verifierGagnant(matchs[match_courant].grille))
+                {
+                case 10:
+                    // victoire joueur 1
+                    matchs[match_courant].gagnant = 0;
+                    break;
+                
+                case 11:
+                    // victoire joueur 2
+                    matchs[match_courant].gagnant = 1;
+                    break;
+
+                case -1:
+                    // match nul
+                    matchs[match_courant].gagnant = 2;
+                    break;
+
+                case 0:
+                    // pas de victoire
+                    break;
+                
+                default:
+                    break;
+                }
+
+
+                //a la fin du tour on switch le tour
+                matchs[match_courant].tour ^= 1;
+            }
         }
 
 

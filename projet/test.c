@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int i = 0;
+
 int verifierGagnant(char grille[3][3]) {
     // Vérification des lignes et des colonnes
     for(int i = 0; i < 3; i++) {
@@ -51,6 +53,23 @@ int main() {
                          '-', '-', '-'};
 
     printf("%d\n", verifierGagnant(grille));
+
+
+    switch (i)
+    {
+        printf("debut du switch");
+    case 0:
+        printf("i=0");
+        break;
+
+    case 1:
+        printf("i=1");
+        break;
+    
+    default:
+        break;
+    }
+
 
     return(0);
 }

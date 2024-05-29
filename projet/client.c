@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
 
     int flag_fin_partie = FAUX;
 
+    char buffer;
 
 
 
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     // on affiche le numero de match et l'equipe du joueur
     lireLigne(sock, ligne_recue); //recuperation du numero du match joue et du joueur incarne
-    sscanf(ligne_recue, "%d %d", &match, &joueur); //on recupere les numeros depuis la chaine recue
+    sscanf(ligne_recue, "%c %d %d", &buffer, &match, &joueur); //on recupere les numeros depuis la chaine recue
 
 
     // printf("%s\n", ligne_recue);
@@ -133,7 +134,6 @@ int main(int argc, char *argv[]) {
         case TOUR_JOUEUR:
             // a notre tour de jouer
             //on recupere le dernier coup joue
-            char buffer;
             sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
             //on update la grille avec le dernier coup de l'adversaire
             grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
             }
 
             // on communique le coup joue
-            sprintf(ligne_envoyee, "%d %d", x, y);
+            sprintf(ligne_envoyee, "c %d %d", x, y);
             lgEcr = ecrireLigne(sock, ligne_envoyee);
             // printf("%d octets ecrits\n", lgEcr);
 
@@ -166,16 +166,37 @@ int main(int argc, char *argv[]) {
             break;
 
         case DEFAITE:
+            sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
+            //on update la grille avec le dernier coup de l'adversaire
+            grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
+            //on affiche la grille avec le dernier coup adversaire
+            system("clear");
+            afficherGrille(grille_morpion);
+
             printf("Défaite ...\n");
             flag_fin_partie = VRAI;
             break;
 
         case VICTOIRE:
+            sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
+            //on update la grille avec le dernier coup de l'adversaire
+            grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
+            //on affiche la grille avec le dernier coup adversaire
+            system("clear");
+            afficherGrille(grille_morpion);
+
             printf("Victoire !!!\n");
             flag_fin_partie = VRAI;
             break;
 
         case MATCH_NUL:
+            sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
+            //on update la grille avec le dernier coup de l'adversaire
+            grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
+            //on affiche la grille avec le dernier coup adversaire
+            system("clear");
+            afficherGrille(grille_morpion);
+
             printf("Match nul\n");
             flag_fin_partie = VRAI;
             break;
@@ -183,47 +204,6 @@ int main(int argc, char *argv[]) {
         default:
             break;
         }
-
-        // if (ligne_recue[0] == DEBUT_MATCH) {
-        //     printf("Debut de la partie !\n");
-        // }
-
-        // if (ligne_recue[0] == TOUR_JOUEUR) {
-        //     // a notre tour de jouer
-        //     //on recupere le dernier coup joue
-        //     char buffer;
-        //     sscanf(ligne_recue, "%c %d %d", &buffer, &x_dernier_coup_adversaire, &y_dernier_coup_adversaire);
-        //     //on update la grille avec le dernier coup de l'adversaire
-        //     grille_morpion[y_dernier_coup_adversaire][x_dernier_coup_adversaire] = (!joueur)? 'o' : 'x';
-        //     //on affiche la grille avec le dernier coup adversaire
-        //     system("clear");
-        //     afficherGrille(grille_morpion);
-
-        //     //test du coup demande
-
-        //     // fgets(ligne_envoyee, LIGNE_MAX, stdin);
-            
-        //     x = -1;
-        //     y = -1;
-        //     while ( ((x < 0) || (x > 2) || (y < 0) || (y > 2)) || grille_morpion[y][x] != '-') {
-        //         printf("A vous de jouer !\nQuel coup voulez-vous faire (x y) ?: ");
-        //         scanf("%d %d", &x, &y);
-        //     }
-
-        //     // on communique le coup joue
-        //     sprintf(ligne_envoyee, "%d %d", x, y);
-        //     lgEcr = ecrireLigne(sock, ligne_envoyee);
-        //     // printf("%d octets ecrits\n", lgEcr);
-
-        //     // on place le coup sur la grille
-        //     grille_morpion[y][x] = joueur? 'o' : 'x';
-
-        //     //Affichage grille
-        //     system("clear");
-        //     afficherGrille(grille_morpion);
-        // }
-
-        
 
       
 
