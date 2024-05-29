@@ -57,6 +57,7 @@ int joueur_courant = 0;
 int nb_joueurs_connectes = 0;
 
 char buffer;
+
 //flags de controle des actions serveur. Ils sont declenches par les workers
 int flag_check_grille = FAUX;
 int flag_debut_jeu = FAUX;

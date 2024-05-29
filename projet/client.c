@@ -91,17 +91,7 @@ int main(int argc, char *argv[]) {
 
 
     // boucle principale
-    /*
-    Algorithme général:
-        tant que personne ne gagne:
-            on attends notre tour
-            on donne les coordonnees du coup a jouer
-            on teste si les coordonnees sont ok
-            on MaJ la grille et on envoie le coup au serveur
-            on affiche la grille MaJ
-        on affiche le resultat
-        on met en attente pour le match suivant (ou on deconnecte tout simplement)
-    */
+    
 
     system("clear");
 
@@ -127,10 +117,6 @@ int main(int argc, char *argv[]) {
 
         switch (ligne_recue[0])
         {
-        case DEBUT_MATCH:
-            printf("Debut de la partie !\n");
-            break;
-
         case TOUR_JOUEUR:
             // a notre tour de jouer
             //on recupere le dernier coup joue
@@ -216,9 +202,9 @@ int main(int argc, char *argv[]) {
         erreur_IO("fermeture canal");
     }
     else {
-        printf("Session terminee.\n");
+        printf("Partie terminée.\n");
     }
-    printf("Partie terminée.\n");
+    
     
     return(0);
 }
