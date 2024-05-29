@@ -35,6 +35,7 @@ typedef struct Match_t
     /*
     Structure definissant les elements principaux d'un match. Certains seront peut etre inutiles
     */
+    int match_en_cours;
     int joueur1;
     int joueur2;
     int tour;
@@ -46,8 +47,8 @@ typedef struct Match_t
 
 //tableau a initialiser automatiquement a l'avenir mais qui contient les matchs a jouer
 Match matchs[NB_JOUEURS/2] = {
-    {0, 1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
-    {2, 3, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
+    {0, 0, 1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
+    {0, 2, 3, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
 };
 
 
@@ -64,6 +65,7 @@ int flag_message_debut_jeu = NB_JOUEURS;
 void* worker(void* arg);
 void init_workers(void);
 int available_worker(void);
+int verifierGagnant(char grille[3][3]);
 
 
 
@@ -158,22 +160,27 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        flag_debut_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
+        //flag_debut_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
+        for(int i=0; i<NB_JOUEURS; i++) {
+            matchs[i].match_en_cours = 1;
+        }
+
+
+        // attente de la fin des matchs (tout les canaux à -1)
+        int a = 0;
+
+        while( a != NB_JOUEURS*-1 ) {
+            a = 0;
+            for(int i=0; i<NB_JOUEURS; i++) {
+            a += dataW[i].canal;
+            }
+            usleep(100000); //100 ms
+        }
         
 
-
-        //Gestion des events
-        if (flag_check_grille) {
-            //verification des grilles de jeu
-
-
-            flag_check_grille = 0; //reset du flag
-        }
+        printf("Fin de la première série de matchs.\n");
+        nb_joueurs_connectes = 0; //on reset, c'est temporaire
     }
-
-    // if(close(fd_log) == -1) {
-    //     erreur_IO("fermeture journal.log");
-    // }
 
 
     return(0);
@@ -195,7 +202,7 @@ void* worker(void* arg) {
 
         //recuperer les infos de connexion via la structure passee en argument
         int canal = donnees_thread->canal;
-        int match = donnees_thread->match;
+        int match_courant = donnees_thread->match;
         int joueur= donnees_thread->joueur;
 
         char ligne_recue[LIGNE_MAX];
@@ -207,14 +214,15 @@ void* worker(void* arg) {
         
 
         //affichage du match et du numero de joueur
-        sprintf(ligne_envoyee, "%d %d", match, joueur);
+        sprintf(ligne_envoyee, "%d %d", match_courant, joueur);
         ecrireLigne(canal, ligne_envoyee);
         
-
+        while(!matchs[match_courant].match_en_cours) {usleep(100);} //attente de debut de partie
+        int flag_local_match_en_cours = VRAI;
         // boucle principale de dialogue utilisateur
-        while(strcmp(ligne_recue, "fin") != 0) {
+        while(flag_local_match_en_cours) {
             
-            if (flag_debut_jeu) {
+            // if () {
 
                 // if (flag_message_debut_jeu) {
                 //     sprintf(ligne_envoyee, "s\n");
@@ -222,49 +230,92 @@ void* worker(void* arg) {
                 //     flag_message_debut_jeu--;
                 // }
             
-                if (matchs[match].tour == joueur) {
+                if (matchs[match_courant].tour == joueur) {
                     // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
                     //on dit quel est le dernier coup joue sur la partie
-                    sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
-                    ecrireLigne(canal, ligne_envoyee);
+                    // sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
+                    // ecrireLigne(canal, ligne_envoyee);
+
+                    // on teste si il y a victoire d'un joueur
+                    if (matchs[match_courant].gagnant == joueur) {
+                        // victoire du joueur
+                        sprintf(ligne_envoyee, "v\n");
+                        ecrireLigne(canal, ligne_envoyee);
+                        flag_local_match_en_cours = FAUX; //arret du match
+                    }
+                    if (matchs[match_courant].gagnant == !joueur) {
+                        // victoire de l'adversaire
+                        sprintf(ligne_envoyee, "d\n");
+                        ecrireLigne(canal, ligne_envoyee);
+                        flag_local_match_en_cours = FAUX; //arret du match
+                    }
+                    if (matchs[match_courant].gagnant == 2) {
+                        // match nul
+                        sprintf(ligne_envoyee, "n\n");
+                        ecrireLigne(canal, ligne_envoyee);
+                        flag_local_match_en_cours = FAUX; //arret du match
+                    }
+                    if (matchs[match_courant].gagnant == -1) {
+                        // pas de victoire, on joue
+                        sprintf(ligne_envoyee, "t %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
+                        ecrireLigne(canal, ligne_envoyee);
+                    }
+            
+                        
+                        
+                    
 
                     // on attends le coup valide joue par le joueur
                     lgLue = lireLigne(canal, ligne_recue);
                     printf("Serveur. Ligne de %d octet(s) recue: %s\n", lgLue, ligne_recue);
                     sscanf(ligne_recue, "%d %d", &x_joue, &y_joue); //on recupere le coup joue pour l'envoyer au joueur 2
+                    
                     //on sauvegarde le coup joue pour le donner au client du joueur adverse pour update sa grille
-                    matchs[match].dernier_coup_joue.x = x_joue;
-                    matchs[match].dernier_coup_joue.y = y_joue;
+                    matchs[match_courant].dernier_coup_joue.x = x_joue;
+                    matchs[match_courant].dernier_coup_joue.y = y_joue;
+                    matchs[match_courant].grille[y_joue][x_joue] = joueur? 'o' : 'x';
+
+                    // on teste si il y a victoire
+                    switch (verifierGagnant(matchs[match_courant].grille))
+                    {
+                    case 10:
+                        // victoire joueur 1
+                        matchs[match_courant].gagnant = 0;
+                        break;
+                    
+                    case 11:
+                        // victoire joueur 2
+                        matchs[match_courant].gagnant = 1;
+                        break;
+
+                    case -1:
+                        // match nul
+                        matchs[match_courant].gagnant = 2;
+                        break;
+
+                    case 0:
+                        // pas de victoire
+                        break;
+                    
+                    default:
+                        break;
+                    }
 
 
                     //a la fin du tour on switch le tour
-                    matchs[match].tour ^= 1;
+                    matchs[match_courant].tour ^= 1;
                 }
-            }
-
-
-
-         
-
-            
-            
-
-            // if(lgLue == 0) {
-            //     break;
-            // }
-            // if(lgLue == -1) {
-            //     erreur_IO("lecture du message");
             // }
         }
 
 
-        //fermeture canal et thread
-        if(close(canal) == -1) {
-            erreur_IO("fermeture canal");
-        }
-        else {
-            printf("Session terminee.\n");
-        }
+        //fermeture canal
+        // if(close(canal) == -1) {
+        //     erreur_IO("fermeture canal");
+        // }
+        // else {
+        //     printf("Session terminee.\n");
+        // }
 
 
         //mise en veille du worker
@@ -301,3 +352,42 @@ int available_worker(void) {
 }
 
 
+int verifierGagnant(char grille[3][3]) {
+    // Vérification des lignes et des colonnes
+    for(int i = 0; i < 3; i++) {
+        if (grille[i][0] == grille[i][1] && grille[i][1] == grille[i][2] && grille[i][0] != '-' && grille[i][0] == 'x') {
+            return 10; // victoire joueur 1
+        }
+        if (grille[i][0] == grille[i][1] && grille[i][1] == grille[i][2] && grille[i][0] != '-' && grille[i][0] == 'o') {
+            return 11; // victoire joueur 2
+        }
+
+        if (grille[0][i] == grille[1][i] && grille[1][i] == grille[2][i] && grille[0][i] != '-' && grille[0][i] == 'x') {
+            return 10; // victoire joueur 1
+        }
+        if (grille[0][i] == grille[1][i] && grille[1][i] == grille[2][i] && grille[0][i] != '-' && grille[0][i] == 'o') {
+            return 11; // victoire joueur 2
+        }
+    }
+    // diagonales
+    if ((grille[0][0] == grille[1][1] && grille[1][1] == grille[2][2] && grille[0][0] != '-' && grille[0][0] == 'x') ||
+        (grille[0][2] == grille[1][1] && grille[1][1] == grille[2][0] && grille[0][2] != '-'&& grille[0][2] == 'x')) {
+        return 10; // victoire
+    }
+    if ((grille[0][0] == grille[1][1] && grille[1][1] == grille[2][2] && grille[0][0] != '-' && grille[0][0] == 'o') ||
+        (grille[0][2] == grille[1][1] && grille[1][1] == grille[2][0] && grille[0][2] != '-'&& grille[0][2] == 'o')) {
+        return 11; // victoire
+    }
+
+    // grille pleine ?
+    for(int i = 0; i < 3; i++) {
+        for(int j = 0; j < 3; j++) {
+            if (grille[i][j] == '-') {
+                return 0; // le jeu se poursuit
+            }
+        }
+    }
+
+    //on est sorti des boucles for donc la grille est pleine
+    return -1; // match nul...
+}
