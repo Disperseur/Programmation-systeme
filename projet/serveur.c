@@ -19,9 +19,9 @@ NB_WORKERS = NB_JOUEURS
 
 
 #define CMD "serveur"
-#define NB_JOUEURS 4
 
-DataSpec dataW[NB_JOUEURS]; //structure de controle des threads joueurs sur le serveur
+
+
 
 typedef struct
 {
@@ -45,29 +45,25 @@ typedef struct Match_t
     char grille[3][3];
 } Match;
 
-Match matchs[NB_JOUEURS/2] = {
-    {0, 0, 1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
-    {0, 2, 3, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
-};
+
+DataSpec *dataW; //structure de controle des threads joueurs sur le serveur
+Match *matchs; //tableau de structures Matchs pour le suivi des matchs en cours
 
 
 int match_courant = 0;
 int joueur_courant = 0;
+int nb_joueurs = 0;
 int nb_joueurs_connectes = 0;
 
 char buffer;
 
-//flags de controle des actions serveur. Ils sont declenches par les workers
-int flag_check_grille = FAUX;
-int flag_debut_jeu = FAUX;
-int flag_message_debut_jeu = NB_JOUEURS;
 
 
 void* worker(void* arg);
 void init_workers(void);
 int available_worker(void);
 int verifierGagnant(char grille[3][3]);
-
+void init_matchs(void);
 
 
 
@@ -82,8 +78,17 @@ int verifierGagnant(char grille[3][3]);
 int main(int argc, char *argv[]) {
     printf("[Serveur de matchs de morpion]\n\n");
 
+    printf("Combien de matchs voulez vous créer ? (1-3) : ");
+    while (nb_joueurs <= 0 || nb_joueurs >= 4) {
+        scanf("%d", &nb_joueurs);
+    }
+    nb_joueurs*=2;
+
+    printf("%d joueurs\n", nb_joueurs);
+
     // initialisation des workers
     init_workers();
+    init_matchs();
 
     // initialisation du serveur
     short port;
@@ -114,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     // connexion de tout les joueurs avant debut de partie
 
-    while (nb_joueurs_connectes < NB_JOUEURS) {
+    while (nb_joueurs_connectes < nb_joueurs) {
         // attente de connexion
         printf("%s: listening to socket\n", CMD);
         ret = listen (ecoute, 5);
@@ -132,11 +137,10 @@ int main(int argc, char *argv[]) {
             ntohs(adrClient.sin_port));
 
         //affectation d'un worker a la connexion client
-        // start_worker(canal);
         //recherche d'un thread disponible
         int i = available_worker();
 
-        if (i != NB_JOUEURS) {
+        if (i != nb_joueurs) {
             //on affecte la gestion du client au worker i
             printf("Match %d: joueur %d connecte.\n", match_courant, joueur_courant);
             dataW[i].canal = canal;
@@ -160,7 +164,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    for(int i=0; i<NB_JOUEURS; i++) {
+    for(int i=0; i<nb_joueurs; i++) {
         matchs[i].match_en_cours = 1;
     }
 
@@ -170,9 +174,9 @@ int main(int argc, char *argv[]) {
     // attente de la fin des matchs (tout les canaux à -1)
     int a = 0;
 
-    while( a != NB_JOUEURS*-1 ) {
+    while( a != nb_joueurs*-1 ) {
         a = 0;
-        for(int i=0; i<NB_JOUEURS; i++) {
+        for(int i=0; i<nb_joueurs; i++) {
         a += dataW[i].canal;
         }
         usleep(100000); //100 ms
@@ -319,7 +323,9 @@ void* worker(void* arg) {
 
 void init_workers(void) {
     //initialisation de la cohorte
-    for(int i=0; i<NB_JOUEURS; i++) {
+    dataW = malloc(nb_joueurs*sizeof(DataSpec));
+
+    for(int i=0; i<nb_joueurs; i++) {
         dataW[i].canal = -1; //-1 pour mettre en sommeil le thread
         sem_init(&dataW[i].sem, 0, 0); //initialisation du semaphore worker
         pthread_create(&dataW[i].id, NULL, worker, &dataW[i]); //creation de threads
@@ -330,7 +336,7 @@ void init_workers(void) {
 
 int available_worker(void) {
     int i = 0;
-    while(dataW[i].canal != -1 && i < NB_JOUEURS) {i++;}
+    while(dataW[i].canal != -1 && i < nb_joueurs) {i++;}
 
     return i;
 }
@@ -374,4 +380,18 @@ int verifierGagnant(char grille[3][3]) {
 
     //on est sorti des boucles for donc la grille est pleine
     return -1; // match nul...
+}
+
+
+
+void init_matchs(void) {
+    matchs = malloc(nb_joueurs * sizeof(Match));
+
+
+    for(int i=0; i<nb_joueurs; i=i+2) {
+        // Match *nouveau_match = malloc(sizeof(Match));
+        Match nouveau_match = {0, i, i+1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}};
+
+        matchs[i/2] = nouveau_match;
+    }
 }

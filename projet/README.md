@@ -1,6 +1,6 @@
 # Readme du projet PSE: *Tournoi de Morpion*
 
-Projet: tournoi de morpion
+Projet: serveur de matchs de morpion
 
 ## Utilisation
 
@@ -27,3 +27,4 @@ Chaque worker s'occupe d'un client. Il récupère le coup joué (dont la validit
 
 
 
+Pour le débug, le serveur reçoit les coups joués par chaque client sous la forme "c <pos_x> <pos_y>"
