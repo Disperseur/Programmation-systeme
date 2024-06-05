@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
 
     // printf("%s\n", ligne_recue);
-    printf("Match joue: %d, vous etes le joueur n°%d\n", match, joueur);
+    printf("Match joue: %d, vous etes le joueur n°%d\n", match+1, joueur+1);
 
     // initialisation de la grille de jeu
     initialiserGrille(grille_morpion);

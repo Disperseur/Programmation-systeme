@@ -45,7 +45,6 @@ typedef struct Match_t
     char grille[3][3];
 } Match;
 
-//tableau a initialiser automatiquement a l'avenir mais qui contient les matchs a jouer
 Match matchs[NB_JOUEURS/2] = {
     {0, 0, 1, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}},
     {0, 2, 3, 0, -1, {-1, -1}, {{'-', '-', '-'}, {'-', '-', '-'}, {'-', '-', '-'}}}
@@ -81,7 +80,7 @@ int verifierGagnant(char grille[3][3]);
 
 
 int main(int argc, char *argv[]) {
-    printf("[Serveur de tournoi de morpion]\n\n");
+    printf("[Serveur de matchs de morpion]\n\n");
 
     // initialisation des workers
     init_workers();
@@ -113,78 +112,74 @@ int main(int argc, char *argv[]) {
    
 
 
-    while (1) {
-        // connexion de tout les joueurs avant debut de partie
+    // connexion de tout les joueurs avant debut de partie
 
-        while (nb_joueurs_connectes < NB_JOUEURS) {
-            // attente de connexion
-            printf("%s: listening to socket\n", CMD);
-            ret = listen (ecoute, 5);
-            if (ret < 0)
-            erreur_IO("listen");
+    while (nb_joueurs_connectes < NB_JOUEURS) {
+        // attente de connexion
+        printf("%s: listening to socket\n", CMD);
+        ret = listen (ecoute, 5);
+        if (ret < 0)
+        erreur_IO("listen");
 
-            printf("%s: accepting a connection\n", CMD);
-            lgAdrClient = sizeof(adrClient);
-            canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient); //fonction qui attends une nouvelle connexion
-            if (canal < 0)
-                erreur_IO("accept");
+        printf("%s: accepting a connection\n", CMD);
+        lgAdrClient = sizeof(adrClient);
+        canal = accept(ecoute, (struct sockaddr *)&adrClient, &lgAdrClient); //fonction qui attends une nouvelle connexion
+        if (canal < 0)
+            erreur_IO("accept");
 
-            printf("%s: adr %s, port %hu\n", CMD,
-                stringIP(ntohl(adrClient.sin_addr.s_addr)),
-                ntohs(adrClient.sin_port));
+        printf("%s: adr %s, port %hu\n", CMD,
+            stringIP(ntohl(adrClient.sin_addr.s_addr)),
+            ntohs(adrClient.sin_port));
 
-            //affectation d'un worker a la connexion client
-            // start_worker(canal);
-            //recherche d'un thread disponible
-            int i = available_worker();
+        //affectation d'un worker a la connexion client
+        // start_worker(canal);
+        //recherche d'un thread disponible
+        int i = available_worker();
 
-            if (i != NB_JOUEURS) {
-                //on affecte la gestion du client au worker i
-                printf("Match %d: joueur %d connecte.\n", match_courant, joueur_courant);
-                dataW[i].canal = canal;
-                dataW[i].match = match_courant;
-                dataW[i].joueur = joueur_courant;
+        if (i != NB_JOUEURS) {
+            //on affecte la gestion du client au worker i
+            printf("Match %d: joueur %d connecte.\n", match_courant, joueur_courant);
+            dataW[i].canal = canal;
+            dataW[i].match = match_courant;
+            dataW[i].joueur = joueur_courant;
 
-                sem_post(&dataW[i].sem); //on actionne le semaphore
-                
-                nb_joueurs_connectes++;
+            sem_post(&dataW[i].sem); //on actionne le semaphore
+            
+            nb_joueurs_connectes++;
 
-                //controle de l'affectation aux matchs et joueurs des workers (renommes en joueur)
-                if (joueur_courant < 1) joueur_courant++;
-                else {
-                    joueur_courant = 0;
-                    match_courant++;
-                }
-            }        
+            //controle de l'affectation aux matchs et joueurs des workers (renommes en joueur)
+            if (joueur_courant < 1) joueur_courant++;
             else {
-                //gestion de la saturation
-                printf("Tout les workers sont occupés !\n"); //a retirer prochainement
+                joueur_courant = 0;
+                match_courant++;
             }
+        }        
+        else {
+            //gestion de la saturation
+            printf("Tout les workers sont occupés !\n"); //a retirer prochainement
         }
-
-        //flag_debut_jeu = VRAI; //flag attendu par tout les workers pour demarrer de maniere synchronisee
-        for(int i=0; i<NB_JOUEURS; i++) {
-            matchs[i].match_en_cours = 1;
-        }
-
-        printf("Début des matchs !\n\n");
-
-
-        // attente de la fin des matchs (tout les canaux à -1)
-        int a = 0;
-
-        while( a != NB_JOUEURS*-1 ) {
-            a = 0;
-            for(int i=0; i<NB_JOUEURS; i++) {
-            a += dataW[i].canal;
-            }
-            usleep(100000); //100 ms
-        }
-        
-
-        printf("Fin de la première série de matchs.\n");
-        nb_joueurs_connectes = 0; //on reset, c'est temporaire
     }
+
+    for(int i=0; i<NB_JOUEURS; i++) {
+        matchs[i].match_en_cours = 1;
+    }
+
+    printf("Début des matchs !\n\n");
+
+
+    // attente de la fin des matchs (tout les canaux à -1)
+    int a = 0;
+
+    while( a != NB_JOUEURS*-1 ) {
+        a = 0;
+        for(int i=0; i<NB_JOUEURS; i++) {
+        a += dataW[i].canal;
+        }
+        usleep(100000); //100 ms
+    }
+    
+
+    printf("Fin des matchs !\n");
 
 
     return(0);
@@ -238,6 +233,7 @@ void* worker(void* arg) {
                     sprintf(ligne_envoyee, "v %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
                     ecrireLigne(canal, ligne_envoyee);
                     flag_local_match_en_cours = FAUX; //arret du match
+                    printf("Match n°%d: Victoire du joueur %d !\n", match_courant+1, joueur+1);
                 }
                 if (matchs[match_courant].gagnant == !joueur) {
                     // victoire de l'adversaire
@@ -250,6 +246,7 @@ void* worker(void* arg) {
                     sprintf(ligne_envoyee, "n %d %d\n", matchs[match_courant].dernier_coup_joue.x, matchs[match_courant].dernier_coup_joue.y);
                     ecrireLigne(canal, ligne_envoyee);
                     flag_local_match_en_cours = FAUX; //arret du match
+                    printf("Match n°%d: match nul.\n", match_courant+1);
                 }
                 if (matchs[match_courant].gagnant == -1) {
                     // pas de victoire, on joue
@@ -303,14 +300,6 @@ void* worker(void* arg) {
             }
         }
 
-
-        //fermeture canal
-        // if(close(canal) == -1) {
-        //     erreur_IO("fermeture canal");
-        // }
-        // else {
-        //     printf("Session terminee.\n");
-        // }
 
 
         //mise en veille du worker
