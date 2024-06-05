@@ -6,12 +6,15 @@ Projet: serveur de matchs de morpion
 
 * Lancer le serveur dans un premier terminal via:
 ````$./Serveur 2000````
-* Ouvrir quatres autres terminaux et lancer quatre clients via:
+
+Choisir le nombre de matchs que l'on autorise simultanément.
+
+* Ouvrir autant d'autres terminaux qu'il y a de matchs et lancer autant de clients via:
 ````$./client localhost 2000````.
-Cela permet de simuler quatre clients en local sur une seule machine.
+Cela permet de simuler les clients en local sur une seule machine.
 
 ## Fonctionnement
-Le jeu fonctionne en tour par tour. Deux matchs se déroulent simultanément (il est possible d'en mettre plus évidemment). Lorsque c'est son tour de jouer, le joueur est invité à saisir les coordonées de l'emplacement ou il souhaite placer sa marque au format "x y". La grille est mise à jour automatiquement et le client attends que le joueur adverse joue son coup pour continuer.
+Le jeu fonctionne en tour par tour. Les matchs se déroulent simultanément obligatoirement. C'est à dire que si il y a deux matchs, les quatre joueurs doivent obligatoirement tous se connecter pour que les matchs commencent. Lorsque c'est son tour de jouer, le joueur est invité à saisir les coordonées de l'emplacement ou il souhaite placer sa marque au format "x y". La grille est mise à jour automatiquement et le client attends que le joueur adverse joue son coup pour continuer.
 
 
 
