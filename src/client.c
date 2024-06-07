@@ -1,12 +1,3 @@
-/*
-Fonctionnalités du client du jeu Morpion
-- afficher la grille (grille qui est gérée par le serveur donc il faut un dialogue..)
-- acquérir le choix du joueur quand c'est son tour (système de flag pour bloquer lors du tour de l'autre joueur)
-- afficher victoire/défaite/match nul puis quitter
-*/
-
-
-
 #include "pse.h"
 //#include "morpion.h"
 #define CMD "client"

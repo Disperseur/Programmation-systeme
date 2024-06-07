@@ -1,19 +1,3 @@
-/*
-Fonctionnalités du serveur de jeu Morpion
-(- Gérer les parties simultanées)
-- Ordonner les tours de chaque joueur
-- tester la grille et donner la victoire/defaite/match nul
-- acquerir les coup des joueurs (le test de legalite peut etre fait par le client)
-
-
-
-Astuce: pour communiquer entre les workers: variables globales !
-
-
-
-NB_WORKERS = NB_JOUEURS
-*/
-
 #include "pse.h"
 // #include "morpion.h"
 
