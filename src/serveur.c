@@ -182,7 +182,6 @@ void* worker(void* arg) {
     DataSpec* donnees_thread = (DataSpec* )arg;
     
 
-    //boucle infinie principale
     while (1) {
         //attente d'une assignation de joueur
         sem_wait(&donnees_thread->sem);
@@ -210,10 +209,7 @@ void* worker(void* arg) {
         while(flag_local_match_en_cours) {
             
             if (matchs[match_courant].tour == joueur) {
-                // c'est au tour du client de ce worker de jouer ('t' de debut de chaine)
-                // on dit quel est le dernier coup joue sur la partie
-                // sprintf(ligne_envoyee, "t %d %d\n", matchs[match].dernier_coup_joue.x, matchs[match].dernier_coup_joue.y);
-                // ecrireLigne(canal, ligne_envoyee);
+                // c'est au tour du client de jouer
 
                 // on teste si il y a eu victoire d'un joueur
                 if (matchs[match_courant].gagnant == joueur) {

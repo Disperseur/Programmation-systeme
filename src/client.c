@@ -70,9 +70,6 @@ int main(int argc, char *argv[]) {
     if (adrServ == NULL)
         erreur("adresse %s port %s inconnus\n", argv[1], argv[2]);
 
-    // printf("%s: adr %s, port %hu\n", CMD,
-    //         stringIP(ntohl(adrServ->sin_addr.s_addr)),
-    //         ntohs(adrServ->sin_port));
 
     // printf("%s: connecting the socket\n", CMD);
     ret = connect(sock, (struct sockaddr *)adrServ, sizeof(struct sockaddr_in));
